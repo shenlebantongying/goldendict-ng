@@ -22,7 +22,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-12,macos-13,macos-14]
+        os: [macos-12,macos-14]
         qt_ver: [ 6.7.1 ]
         qt_arch: [clang_64]
     env:
@@ -43,26 +43,13 @@ jobs:
       - name: install deps on macos
         run: |
           export HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=TRUE
-          brew install cmake ninja
-          brew install automake
-          brew install autoconf
-          brew install libtool
-          brew install opencc
-          brew install automake libtool
-
-          brew install libiconv
-          brew install lzo bzip2
-          brew install libogg
-          brew install zstd lzip
-          brew install libvorbis
-          brew install hunspell
+          brew install cmake ninja pkg-config create-dmg\
+          opencc libzim hunspell xapian \
+          libiconv libogg libvorbis\
+          lzo bzip2 zstd lzip
+          
           git clone https://github.com/xiaoyifang/eb.git
           cd eb && ./configure && make -j 8 && sudo make install && cd ..
-          # brew install  xz 
-          brew install pkg-config
-          brew install create-dmg
-          brew install xapian
-          brew install libzim
 
       - name: version-file
         shell: bash
@@ -155,9 +142,8 @@ jobs:
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: build_dir/*.dmg
+          file: *.dmg
           file_glob: true
-
           tag: v${{env.version}}-${{env.version-suffix}}.${{ steps.vars.outputs.sha_short }}
           overwrite: true
           release_name: GoldenDict-ng-v${{env.version}}-${{env.version-suffix}}.${{ steps.vars.outputs.release_hm }}.${{ steps.vars.outputs.sha_short }}
