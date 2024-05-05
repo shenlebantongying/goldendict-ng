@@ -43,9 +43,9 @@ jobs:
       - name: install deps on macos
         run: |
           export HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=TRUE
-          brew install cmake ninja pkg-config create-dmg\
+          brew install cmake ninja pkg-config create-dmg \
           opencc libzim hunspell xapian \
-          libiconv libogg libvorbis\
+          libiconv libogg libvorbis \
           lzo bzip2 zstd lzip
           
           git clone https://github.com/xiaoyifang/eb.git
