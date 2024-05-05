@@ -81,12 +81,26 @@ jobs:
           cmake --install build_dir/
       - name: changelog
         id: changelog
+        env:
+          prerelease: ${{env.prerelease}}
         run: |
-          previousTag=$(git tag --sort=-creatordate | grep "^v" | sed -n 2p)
+          if [[ "$prerelease" == 'true' ]]
+          then
+            echo "This is a pre-release"
+            previousTag=$(git tag --sort=-creatordate | grep "^v" | sed -n 2p)
+
+            echo "prev_tag=$previousTag" >> $GITHUB_OUTPUT
+            echo "curr_tag=$(git tag --sort=-creatordate | grep "^v" | sed -n 1p)" >> $GITHUB_OUTPUT
+          else 
+            echo "This is not a pre-release"
+            previousTag=$(git tag --sort=-creatordate | grep "^v" | grep -v "alpha"  | sed -n 2p)
+            echo "previousTag : $previousTag"
+            
+            echo "prev_tag=$previousTag" >> $GITHUB_OUTPUT
+            echo "curr_tag=$(git tag --sort=-creatordate | grep "^v"  | grep -v "alpha" | sed -n 1p)" >> $GITHUB_OUTPUT
+          fi
           echo "previousTag : $previousTag"
-          
-          echo "prev_tag=$previousTag" >> $GITHUB_OUTPUT
-          echo "curr_tag=$(git tag --sort=-creatordate | grep "^v" | sed -n 1p)" >> $GITHUB_OUTPUT
+          echo "curr_tag : $curr_tag"
 
       - name: Set outputs
         id: vars
