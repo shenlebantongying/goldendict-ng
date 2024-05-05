@@ -212,12 +212,14 @@ if (APPLE)
     set(Assembling_Dir "${CMAKE_BINARY_DIR}/redist")
     set(App_Name "GoldenDict.app")
     set(Redistributable_APP "${Assembling_Dir}/${App_Name}")
+    
     qt_generate_deploy_script(
             TARGET ${GOLDENDICT}
             OUTPUT_SCRIPT deploy_script
             CONTENT "qt_deploy_runtime_dependencies(
                         EXECUTABLE \"${Redistributable_APP}\"
                         GENERATE_QT_CONF
+                        BIN_DIR \"${Assembling_Dir}\"
                         NO_APP_STORE_COMPLIANCE
                 )"
     )
