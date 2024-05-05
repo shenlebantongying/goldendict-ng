@@ -239,7 +239,7 @@ if (APPLE)
             --volicon ${CMAKE_SOURCE_DIR}/icons/macicon.icns \
             --icon \"goldendict-ng.app\" 100 100
             --app-drop-link 300 100 \
-            \"${CMAKE_PROJECT_NAME}-${CMAKE_PROJECT_VERSION}-${CMAKE_SYSTEM_PROCESSOR}.dmg\" \
+            \"${CMAKE_PROJECT_NAME}-${CMAKE_PROJECT_VERSION}-macOS${CMAKE_SYSTEM_VERSION}-Qt${Qt6_VERSION}-${CMAKE_SYSTEM_PROCESSOR}.dmg\" \
             \"${Assembling_Dir}\")"
         )
     else ()
