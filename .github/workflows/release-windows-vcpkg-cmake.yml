@@ -174,8 +174,6 @@ jobs:
 
           $tagExist = gh api --silent "repos/:owner/:repo/git/refs/tags/${{github.ref_name}}"
           if (-not $?) {
-            echo "true"
-            echo $env:prerelease
             if ($env:prerelease -eq "true") {
               gh release create ${tagName} --target ${{github.ref_name}} --notes "${changeNotes}" --latest=false --prerelease
             } else {
@@ -183,10 +181,14 @@ jobs:
             }
           }
 
+          # file name after # is display label
+          
           cd './build_dir'
-          gh release upload "${tagName}"  $(Get-ChildItem -Path '.\*' -Include @("*.7z","*.exe")  -Name)  --clobber
+          gh release upload "${tagName}"  GoldenDict-${{env.version}}-Qt${{matrix.qt_ver}}.7z#GoldenDict-${{env.version}}-Qt${{matrix.qt_ver}}-Windows-Installer.exe  --clobber
+          gh release upload "${tagName}"  GoldenDict-${{env.version}}-Qt${{matrix.qt_ver}}.exe#GoldenDict-${{env.version}}-Qt${{matrix.qt_ver}}-Windows.7z  --clobber
+          
           cd './goldendict'
-          gh release upload "${tagName}"  goldendict.exe#GoldenDict-${{env.version}}-Qt${{matrix.qt_ver}}-main-executable-file-only  --clobber
-          gh release upload "${tagName}"  goldendict.pdb#GoldenDict-${{env.version}}-Qt${{matrix.qt_ver}}-PDB-file-for-debug-only  --clobber
+          gh release upload "${tagName}"  goldendict.exe#GoldenDict-${{env.version}}-Qt${{matrix.qt_ver}}-main-executable-file-only.exe  --clobber
+          gh release upload "${tagName}"  goldendict.pdb#GoldenDict-${{env.version}}-Qt${{matrix.qt_ver}}-PDB-file-for-debug.pdb  --clobber
           cd ..
 

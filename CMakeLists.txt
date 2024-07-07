@@ -270,7 +270,7 @@ if (APPLE)
             --volicon ${CMAKE_SOURCE_DIR}/icons/macicon.icns \
             --icon \"${App_Name}\" 100 100
             --app-drop-link 300 100 \
-            \"GoldenDict-${CMAKE_PROJECT_VERSION}-Qt${Qt6_VERSION}-${CMAKE_SYSTEM_PROCESSOR}.dmg\" \
+            \"GoldenDict-${CMAKE_PROJECT_VERSION}-Qt${Qt6_VERSION}-macOS-${CMAKE_SYSTEM_PROCESSOR}.dmg\" \
             \"${Assembling_Dir}\")"
         )
     else ()
@@ -353,7 +353,7 @@ if (WIN32)
             PATTERN "*.ilk" EXCLUDE)
 
 
-    set(CPACK_PACKAGE_FILE_NAME "GoldenDict-${PROJECT_VERSION}-Qt${Qt6Widgets_VERSION}-${CMAKE_SYSTEM_NAME}-installer")
+    set(CPACK_PACKAGE_FILE_NAME "GoldenDict-${PROJECT_VERSION}-Qt${Qt6Widgets_VERSION}")
     set(CPACK_GENERATOR "7Z;NSIS64")
     set(CPACK_NSIS_MANIFEST_DPI_AWARE ON)
     set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.txt")
