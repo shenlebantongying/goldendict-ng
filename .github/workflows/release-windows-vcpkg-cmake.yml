@@ -133,14 +133,14 @@ jobs:
       - name: CPack create package
         run: |
           cd './build_dir'
-          cpack --verbose --trace -G 7Z
+          cpack --verbose --trace
           cd ..
           pwd
       - name: Upload packages
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          $tagName = "v$env:version-$env:versionSuffix-$(git rev-parse --short=8 HEAD)"
+          $tagName = "v$env:version-$env:versionSuffix.$(git rev-parse --short=8 HEAD)"
           
           $changeNotes = "
           #### Install instructions for Windows, macOS and Linux 
@@ -168,10 +168,12 @@ jobs:
           #### Changes
           
           ${{steps.build_changelog.outputs.changelog}}
-          "
+          "          
 
           $tagExist = gh api --silent "repos/:owner/:repo/git/refs/tags/${{github.ref_name}}"
           if (-not $?) {
+            echo "true"
+            echo $env:prerelease
             if ($env:prerelease -eq "true") {
               gh release create ${tagName} --target ${{github.ref_name}} --notes "${changeNotes}" --latest=false
             } else {
