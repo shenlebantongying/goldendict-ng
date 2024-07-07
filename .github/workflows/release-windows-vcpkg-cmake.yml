@@ -170,10 +170,13 @@ jobs:
           ${{steps.build_changelog.outputs.changelog}}
           "
 
-
           $tagExist = gh api --silent "repos/:owner/:repo/git/refs/tags/${{github.ref_name}}"
-          if ($tagExist -neq $null){
-            gh release create ${tagName} --target ${{github.ref_name}} --notes "${changeNotes}"
+          if (-not $?) {
+            if ($env:prerelease -eq "true") {
+              gh release create ${tagName} --target ${{github.ref_name}} --notes "${changeNotes}" --latest=false
+            } else {
+              gh release create ${tagName} --target ${{github.ref_name}} --notes "${changeNotes}" --latest=true 
+            }
           }
 
           cd './build_dir'
