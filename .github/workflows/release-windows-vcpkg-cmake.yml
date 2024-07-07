@@ -180,6 +180,6 @@ jobs:
           }
 
           cd './build_dir'
-          gh release upload "${tagName}"  $(Get-ChildItem -Path '.\*' -Include @("*.7z","*.exe")  -Name) --target  ${{github.ref_name}} --notes "${changeNotes}"
+          gh release upload "${tagName}"  $(Get-ChildItem -Path '.\*' -Include @("*.7z","*.exe")  -Name)  --clobber 
           cd ..
 
