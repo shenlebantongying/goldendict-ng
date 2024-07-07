@@ -175,13 +175,16 @@ jobs:
             echo "true"
             echo $env:prerelease
             if ($env:prerelease -eq "true") {
-              gh release create ${tagName} --target ${{github.ref_name}} --notes "${changeNotes}" --latest=false
+              gh release create ${tagName} --target ${{github.ref_name}} --notes "${changeNotes}" --latest=false --prerelease
             } else {
               gh release create ${tagName} --target ${{github.ref_name}} --notes "${changeNotes}" --latest=true 
             }
           }
 
           cd './build_dir'
-          gh release upload "${tagName}"  $(Get-ChildItem -Path '.\*' -Include @("*.7z","*.exe")  -Name)  --clobber 
+          gh release upload "${tagName}"  $(Get-ChildItem -Path '.\*' -Include @("*.7z","*.exe")  -Name)  --clobber
+          cd './goldendict'
+          gh release upload "${tagName}"  goldendict.exe#GoldenDict-${{env.version}}-Qt${{matrix.qt_ver}}-main-executable-file-only  --clobber
+          gh release upload "${tagName}"  goldendict.pdb#GoldenDict-${{env.version}}-Qt${{matrix.qt_ver}}-PDB-file-for-debug-only  --clobber
           cd ..
 
