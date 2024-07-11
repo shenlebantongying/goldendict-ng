@@ -158,7 +158,7 @@ jobs:
           
           Add-Content -Path ./change_note.txt -Value @'
           ${{steps.build_changelog.outputs.changelog}}
-          @'
+          '@
 
           $tagExist = gh api --silent "repos/:owner/:repo/git/refs/tags/${{github.ref_name}}"
           if (-not $?) {
