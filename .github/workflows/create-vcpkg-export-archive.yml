@@ -11,13 +11,13 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Obtain vcpkg-configuration
+      - name: Create export
         run: |
           # ensure always
           vcpkg x-update-baseline
   
           vcpkg install --x-feature=breakpad
-          vcpkg export --raw --output-dir=.\exports --output= ${{ env.outputName }}
+          vcpkg export --raw --output-dir=.\exports --output=${{ env.outputName }}
           echo "Starts compressing..."
           cd .\exports\
           cmake -E tar c ${{ env.outputName }}.tar.zst --zstd ./ ${{ env.outputName }}
@@ -26,24 +26,27 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          $vcpkgList = vcpkg list          
           $vcpkgBaselineVersion = $(Get-Content .\vcpkg-configuration.json | ConvertFrom-Json).'default-registry'.'baseline'
-          $fileHash = Get-FileHash ${{ env.outputName }}.tar.zst SHA512
           $dateString = Get-Date -Format "yyMMdd"
           
-          $tagName = "vcpkg-export-${dateString}-${tagName}"
+          $tagName = "vcpkg_${dateString}_${vcpkgBaselineVersion}"
 
-          $notes="GoldenDict-ng's windows build artifacts, for development purpose only.
+          cd .\exports
+          $fileHash = $(Get-FileHash ${{ env.outputName }}.tar.zst SHA512).Hash
+          
+          $notes=@"
+          GoldenDict-ng's windows build artifacts created with vcpkg, for development purpose only.
           
           vcpkg baseline version: <https://github.com/microsoft/vcpkg/tree/${vcpkgBaselineVersion}>
-          archive SHA512: ${$fileHash}
-          vcpkg packages:
-          ```
-          ${vcpkgList}
-          ```
-          "
+          archive SHA512: ``${fileHash}``
+          packages:
+          ``````
+          "@
+          Add-Content -Path .\note.txt  -Value ${notes}
+          vcpkg list | Add-Content .\note.txt
+          Add-Content -Path .\note.txt  -Value `````
+
+          Get-Content .\note.txt
           
-          echo $notes
-          
-          gh release creat "${tagName}" --notes "${notes}" --title "vcpkg package export archive" --latest=false
+          gh release create "${tagName}" --notes-file=.\note.txt --title "vcpkg package export archive" --latest=false
           gh release upload "${tagName}" ${{ env.outputName }}.tar.zst  --clobber
