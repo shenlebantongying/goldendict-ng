@@ -1,0 +1,49 @@
+name: Create vcpkg export archive
+on:
+  workflow_dispatch:
+
+
+env:
+  outputName: goldendict-ng-vcpkg-exports
+
+jobs:
+  create_new_cache:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Obtain vcpkg-configuration
+        run: |
+          # ensure always
+          vcpkg x-update-baseline
+  
+          vcpkg install --x-feature=breakpad
+          vcpkg export --raw --output-dir=.\exports --output= ${{ env.outputName }}
+          echo "Starts compressing..."
+          cd .\exports\
+          cmake -E tar c ${{ env.outputName }}.tar.zst --zstd ./ ${{ env.outputName }}
+
+      - name: Upload as release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $vcpkgList = vcpkg list          
+          $vcpkgBaselineVersion = $(Get-Content .\vcpkg-configuration.json | ConvertFrom-Json).'default-registry'.'baseline'
+          $fileHash = Get-FileHash ${{ env.outputName }}.tar.zst SHA512
+          $dateString = Get-Date -Format "yyMMdd"
+          
+          $tagName = "vcpkg-export-${dateString}-${tagName}"
+
+          $notes="GoldenDict-ng's windows build artifacts, for development purpose only.
+          
+          vcpkg baseline version: <https://github.com/microsoft/vcpkg/tree/${vcpkgBaselineVersion}>
+          archive SHA512: ${$fileHash}
+          vcpkg packages:
+          ```
+          ${vcpkgList}
+          ```
+          "
+          
+          echo $notes
+          
+          gh release creat "${tagName}" --notes "${notes}" --title "vcpkg package export archive" --latest=false
+          gh release upload "${tagName}" ${{ env.outputName }}.tar.zst  --clobber
