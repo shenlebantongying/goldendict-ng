@@ -13,9 +13,7 @@ bool ArticleWebPage::acceptNavigationRequest( const QUrl & resUrl, NavigationTyp
     url.setHost( "localhost" );
     url.setPath( "" );
     auto [ valid, word ] = Utils::Url::getQueryWord( resUrl );
-    Utils::Url::addQueryItem( url, "word", word );
-    Utils::Url::addQueryItem( url, "group", lastReq.group );
-    Utils::Url::addQueryItem( url, "muted", lastReq.mutedDicts );
+    Utils::Url::addQueryItem( url, {{"word", word}, {"group", lastReq.group}, {"muted", lastReq.mutedDicts}} );
     setUrl( url );
     return false;
   }

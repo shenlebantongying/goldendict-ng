@@ -113,8 +113,9 @@ QNetworkReply * ArticleNetworkAccessManager::getArticleReply( QNetworkRequest co
     if ( path.size() > 1 ) {
       url.setPath( "" );
 
-      Utils::Url::addQueryItem( url, "word", path.mid( 1 ) );
-      Utils::Url::addQueryItem( url, "group", QString::number( GlobalBroadcaster::instance()->currentGroupId ) );
+      Utils::Url::addQueryItem( url,
+                                {{"word", path.mid( 1 )},
+                                 {"group", QString::number( GlobalBroadcaster::instance()->currentGroupId )}} );
     }
   }
 

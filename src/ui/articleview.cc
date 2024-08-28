@@ -307,8 +307,7 @@ void ArticleView::showDefinition( QString const & word,
 
   req.setScheme( "gdlookup" );
   req.setHost( "localhost" );
-  Utils::Url::addQueryItem( req, "word", word );
-  Utils::Url::addQueryItem( req, "group", QString::number( group ) );
+  Utils::Url::addQueryItem( req, {{"word", word}, {"group", QString::number( group )}} );
   if ( cfg.preferences.ignoreDiacritics )
     Utils::Url::addQueryItem( req, "ignore_diacritics", "1" );
 
@@ -375,9 +374,9 @@ void ArticleView::showDefinition( QString const & word,
 
   req.setScheme( "gdlookup" );
   req.setHost( "localhost" );
-  Utils::Url::addQueryItem( req, "word", word );
-  Utils::Url::addQueryItem( req, "dictionaries", dictIDs.join( "," ) );
-  Utils::Url::addQueryItem( req, "regexp", searchRegExp.pattern() );
+  Utils::Url::addQueryItem( req,
+                            {{"word", word}, {"dictionaries", dictIDs.join( "," )},
+                             {"regexp", searchRegExp.pattern()}} );
   if ( !searchRegExp.patternOptions().testFlag( QRegularExpression::CaseInsensitiveOption ) )
     Utils::Url::addQueryItem( req, "matchcase", "1" );
   //  if ( searchRegExp.patternSyntax() == QRegExp::WildcardUnix )

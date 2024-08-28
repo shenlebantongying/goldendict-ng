@@ -156,8 +156,8 @@ MediaWikiWordSearchRequest::MediaWikiWordSearchRequest( wstring const & str,
 
   GlobalBroadcaster::instance()->addWhitelist( reqUrl.host() );
 
-  Utils::Url::addQueryItem( reqUrl, "apprefix", QString::fromStdU32String( str ).replace( '+', "%2B" ) );
-  Utils::Url::addQueryItem( reqUrl, "lang", lang );
+  Utils::Url::addQueryItem( reqUrl,
+                            {{"apprefix", QString::fromStdU32String( str ).replace( '+', "%2B" )}, {"lang", lang}} );
 
   QNetworkRequest req( reqUrl );
   //millseconds.
@@ -456,8 +456,8 @@ void MediaWikiArticleRequest::addQuery( QNetworkAccessManager & mgr, wstring con
 
   QUrl reqUrl( url + "/api.php?action=parse&prop=text|revid|sections&format=xml&redirects" );
 
-  Utils::Url::addQueryItem( reqUrl, "page", QString::fromStdU32String( str ).replace( '+', "%2B" ) );
-  Utils::Url::addQueryItem( reqUrl, "variant", lang );
+  Utils::Url::addQueryItem( reqUrl,
+                            {{"page", QString::fromStdU32String( str ).replace( '+', "%2B" )}, {"variant", lang}} );
   QNetworkRequest req( reqUrl );
   //millseconds.
   req.setTransferTimeout( 3000 );

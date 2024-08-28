@@ -187,6 +187,16 @@ inline void addQueryItem( QUrl & url, QString const & key, QString const & value
   url.setQuery( urlQuery );
 }
 
+inline void addQueryItem( QUrl & url, std::initializer_list< std::pair< QString const &, QString const & > > keyValues )
+{
+  QUrlQuery urlQuery( url );
+  for ( auto [ k,v ] : keyValues ) {
+    urlQuery.addQueryItem( k, v );
+  }
+  url.setQuery( urlQuery );
+}
+
+
 inline void removeQueryItem( QUrl & url, QString const & key )
 {
   QUrlQuery urlQuery( url );
