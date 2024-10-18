@@ -5,21 +5,13 @@
 #include "initializing.hh"
 #include <QCloseEvent>
 
-Initializing::Initializing( QWidget * parent, bool showOnStartup ):
+Initializing::Initializing( QWidget * parent):
   QDialog( parent )
 {
   ui.setupUi( this );
 
   setWindowFlags( Qt::Dialog | Qt::FramelessWindowHint );
-
   setWindowIcon( QIcon( ":/icons/programicon.png" ) );
-
-  if ( showOnStartup ) {
-    ui.operation->setText( tr( "Please wait..." ) );
-    ui.dictionary->hide();
-    ui.progressBar->hide();
-    show();
-  }
 }
 
 void Initializing::indexing( QString const & dictionaryName )
