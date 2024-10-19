@@ -1,5 +1,8 @@
 name: Release All
-run-name: 'Releasing ${{github.sha}}'
+env: 
+  version: 24.11.0
+  prerelease: ${{ !contains(github.ref_name,'master') }}
+  versionSuffix: ${{ !contains(github.ref_name,'master') && 'alpha' || 'Release' }}
 on: 
   workflow_dispatch:
   push:
@@ -17,9 +20,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-14]
+        os: [macos-13,macos-14]
         qt_ver: [ 6.6.3, 6.7.3 ]
-        qt_arch: [clang_64]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -28,28 +30,26 @@ jobs:
         run: |
           export HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=TRUE
           brew install \
-          bzip2  \
-          create-dmg \
-          hunspell \
-          libiconv \
-          libogg \
-          libvorbis \
-          libzim \
-          lzip \
-          ninja \
-          opencc \
-          xapian
+            bzip2  \
+            create-dmg \
+            hunspell \
+            libiconv \
+            libogg \
+            libvorbis \
+            libzim \
+            lzip \
+            ninja \
+            opencc \
+            xapian
           
           git clone https://github.com/xiaoyifang/eb.git
-          cd eb && ./configure && make -j 8 && sudo make install && cd ..
-                
+          cd eb && ./configure && make -j 8 && sudo make install && cd ..         
       - name: Install Qt
-        uses: jurplel/install-qt-action@v3
+        uses: jurplel/install-qt-action@v4
         with:
           version: ${{ matrix.qt_ver }}
-          arch: ${{ matrix.qt_arch }}
-          modules: qtwebengine qtwebchannel qtpositioning qt5compat qtmultimedia qtimageformats qtspeech
-          
+          arch: clang_64
+          modules: qtwebengine qtwebchannel qtpositioning qt5compat qtmultimedia qtimageformats qtspeech      
       - name: Compile
         run: |
           mkdir build_dir
@@ -60,7 +60,6 @@ jobs:
             -DCMAKE_BUILD_TYPE=RelWithDebInfo \
             -DCMAKE_OSX_DEPLOYMENT_TARGET="12.0"
           cmake --build build_dir
-          
       - name: Package
         run: |
           cmake --install build_dir/
@@ -76,20 +75,17 @@ jobs:
       matrix:
         os: [windows-2022]
         qt_ver: [ 6.6.3, 6.7.3 ]
-        qt_arch: [win64_msvc2019_64]
     steps:
       - name: Install Qt
-        uses: jurplel/install-qt-action@v3
+        uses: jurplel/install-qt-action@v4
         with:
           version: ${{ matrix.qt_ver }}
-          arch: ${{ matrix.qt_arch }}
+          arch: win64_msvc2019_64
           modules: qtwebengine qtwebchannel qtpositioning qt5compat qtmultimedia qtimageformats qtspeech
           setup-python: 'false'
-          
       - uses: actions/checkout@v4
         with:
           submodules: true
-
       - name: Build binaries
         id: build
         run: |
@@ -115,22 +111,25 @@ jobs:
       - name: Rename files
         shell: bash
         run: |
-            # rename installer names to something better
-            namePrefix=$(basename "$(ls ./build_dir/*.7z)" .7z)
+          # rename installer names to something better
+          namePrefix=$(basename "$(ls ./build_dir/*.7z)" .7z)
 
-            cd ./build_dir
-            mv "${namePrefix}.7z" "${namePrefix}-Windows.7z"
-            mv "${namePrefix}.exe" "${namePrefix}-Windows-installer.exe"
-            cd ./goldendict
-            mv goldendict.exe "../${namePrefix}-Windows-main-exe-file-only.exe" 
-            mv goldendict.pdb "../${namePrefix}-Windows-debug-file.pdb"
-            cd ..
-            cd ..
-            pwd
-            ls -R
+          # note the name will ensure `installer` ranked higher after sorting
+
+          cd ./build_dir
+          mv "${namePrefix}.7z" "${namePrefix}-Windows-installer.7z"
+          mv "${namePrefix}.exe" "${namePrefix}-Windows-installer.exe"
+          cd ./goldendict
+          mv goldendict.exe "../${namePrefix}-Windows-main-exe-file-only.exe" 
+          mv goldendict.pdb "../${namePrefix}-Windows-pdb-debug-file.pdb"
+          cd ..
+          cd ..
+          pwd
+          ls -R
       - uses: actions/upload-artifact@v4
         with:
           name: Windows-Qt${{ matrix.qt_ver }}
+          if-no-files-found: error
           retention-days: 7
           path: |
             ./build_dir/*.exe
@@ -139,12 +138,7 @@ jobs:
   
   generate_other_staffs:
     runs-on: ubuntu-latest
-    env:
-      version: 24.11.0
-      prerelease: ${{ !contains(github.ref_name,'master') }}
-      versionSuffix: ${{ !contains(github.ref_name,'master') && 'alpha' || 'Release' }}
     outputs:
-      prerelease: ${{ env.prerelease }}
       newTag: ${{ steps.getNewTag.outputs.newTag }}
       releaseTitle: ${{steps.getReleaseTitle.outputs.releaseTitle}}
     steps:
@@ -155,10 +149,10 @@ jobs:
         id: shortSHA
         run: |
           echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
-      - name: Get change log tags
+      - name: Get changelog tags
         id: changelogTags
         run: |
-          if [[ '$prerelease' == 'true' ]]
+          if [[ '${{env.prerelease}}' == 'true' ]]
           then
             echo "This is a pre-release"
             previousTag=$(git tag --sort=-creatordate | grep "^v" | sed -n 2p)
@@ -168,6 +162,7 @@ jobs:
             previousTag=$(git tag --sort=-creatordate | grep "^v" | grep -v "alpha"  | sed -n 2p)
             currentTag=$(git tag --sort=-creatordate | grep "^v"  | grep -v "alpha" | sed -n 1p)
           fi
+
           echo "prev_tag=$previousTag" >> $GITHUB_OUTPUT
           echo "curr_tag=$currentTag" >> $GITHUB_OUTPUT
           echo "previousTag : $previousTag"
@@ -175,7 +170,7 @@ jobs:
       - name: Get new tag
         id: getNewTag
         run: |
-          echo "newTag=v${{env.version}}-${{env.versionSuffix}}.${{ steps.shortSHA.outputs.sha_short }}" >> $GITHUB_OUTPUT
+          echo "newTag=v${{ env.version }}-${{ env.versionSuffix }}.${{ steps.shortSHA.outputs.sha_short }}" >> $GITHUB_OUTPUT
       - name: Build Changelog
         id: build_changelog
         uses: mikepenz/release-changelog-builder-action@v3
@@ -219,31 +214,32 @@ jobs:
       - name: Generate changelog.txt
         run: |
           touch changelog.txt
+
           cat <<HEREDOC > changelog.txt
           [Install instructions for Windows, macOS and Linux](https://xiaoyifang.github.io/goldendict-ng/install/).
           
-          Filename pattern: GoldenDict-ng-[version]-[Qt version]-[system name]-...
+          Filename pattern: `GoldenDict-ng-[version]-[Qt version]-[system name]...`
           
           For Linux, the released version is on Flathub → [io.github.xiaoyifang.goldendict_ng](https://flathub.org/apps/io.github.xiaoyifang.goldendict_ng).
 
-          Based on branch: ${{github.ref_name}}
+          Based on branch: ${{ github.ref_name }}
           #### Changes
-
-          ${{steps.build_changelog.outputs.changelog}}
+          ${{ steps.build_changelog.outputs.changelog }}
           HEREDOC
-      - name: Generate release title
+      - name: Get release title
         id: getReleaseTitle
         run: |
-          if [[ '$prerelease' == 'true' ]]
+          if [[ '${{ env.prerelease }}' == 'true' ]]
           then
-            echo "releaseTitle=Daily snapshot $(date -u +"%y-%m-%d %H:%M") ${{ steps.shortSHA.outputs.sha_short}}" >> $GITHUB_OUTPUT
+            echo "releaseTitle=Daily build ${{ steps.shortSHA.outputs.sha_short }}" >> $GITHUB_OUTPUT
           else
-            echo "releaseTitle=v${{env.version}}-${{env.versionSuffix}}.${{ steps.shortSHA.outputs.sha_short}}" >> $GITHUB_OUTPUT
+            echo "releaseTitle=v${{ env.version }}-${{ env.versionSuffix }}.${{ steps.shortSHA.outputs.sha_short }}" >> $GITHUB_OUTPUT
           fi
           
       - uses: actions/upload-artifact@v4
         with:
           name: changelog.txt
+          if-no-files-found: error
           retention-days: 7
           path: ./changelog.txt
         
@@ -251,8 +247,7 @@ jobs:
     needs: [build_macOS, build_Windows, generate_other_staffs]
     runs-on: ubuntu-24.04
     env:
-        prerelease: ${{ needs.generate_other_staffs.outputs.prerelease }}
-        newtag: ${{ needs.generate_other_staffs.outputs.newTag }}
+        newTag: ${{ needs.generate_other_staffs.outputs.newTag }}
         releaseTitle: ${{ needs.generate_other_staffs.outputs.releaseTitle }}
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
@@ -263,28 +258,24 @@ jobs:
         run: ls -R
       - name: Create new tag
         run: |
-          if [[ '${{env.prerelease}}' == 'true' ]]
+          if [[ '${{ env.prerelease }}' == 'true' ]]
           then
-            gh release create ${{env.newtag}} \
-            -t ${{env.releaseTitle}} \
-            --target ${{github.ref_name}} \
-            --notes-file=./changelog.txt \
-            --latest=false \
-            --prerelease \
-            --repo ${GITHUB_REPOSITORY}
+            gh release create '${{ env.newTag }}' \
+              -t '${{ env.releaseTitle }}' \
+              --target '${{ github.ref_name }}' \
+              --notes-file=./changelog.txt \
+              --latest=false \
+              --prerelease \
+              --repo ${GITHUB_REPOSITORY}
           else
-            gh release create ${{env.newtag}} \
-            -t ${{env.releaseTitle}} \
-            --target ${{github.ref_name}} \
-            --notes-file=./changelog.txt \
-            --latest=true \
-            --repo ${GITHUB_REPOSITORY}
+            gh release create '${{ env.newTag }}' \
+              -t '${{ env.releaseTitle }}' \
+              --target '${{ github.ref_name }}' \
+              --notes-file=./changelog.txt \
+              --latest=true \
+              --repo ${GITHUB_REPOSITORY}
           fi 
       - name: Uploading artifacts
         run: |
-          gh release upload ${{env.newtag}} *.exe *.pdb *.dmg *.7z --repo ${GITHUB_REPOSITORY}
-        
-
-        
-
-
+          gh release upload '${{ env.newTag }}' --repo ${GITHUB_REPOSITORY} --clobber \
+            *.7z *.exe *.pdb *.dmg 
