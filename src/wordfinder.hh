@@ -12,6 +12,8 @@
 #include <QRunnable>
 #include "dict/dictionary.hh"
 
+#include <latch>
+
 /// This component takes care of finding words. The search is asynchronous.
 /// This means the GUI doesn't get blocked during the sometimes lenghtly
 /// process of finding words.
@@ -28,7 +30,10 @@ private:
   SearchResults searchResults;
   QString searchErrorString;
   bool searchResultsUncertain;
-  std::list< sptr< Dictionary::WordSearchRequest > > queuedRequests, finishedRequests;
+
+  std::list< sptr< Dictionary::WordSearchRequest > > queuedRequests;
+  std::unique_ptr< std::latch > latch_counter;
+
   std::atomic_bool searchInProgress;
   QMutex mutex;
 

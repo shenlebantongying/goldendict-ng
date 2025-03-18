@@ -42,7 +42,7 @@ project(goldendict-ng
 
 if (APPLE)
     enable_language(OBJCXX)
-    set(CMAKE_OBJCXX_STANDARD 17)
+    set(CMAKE_OBJCXX_STANDARD 20)
 endif ()
 
 set(CMAKE_C_STANDARD 17)

@@ -5,7 +5,7 @@
 #include "folding.hh"
 #include <map>
 #include <QMutexLocker>
-
+#include <latch>
 
 using std::vector;
 using std::list;
@@ -97,7 +97,6 @@ void WordFinder::startSearch()
     QMutexLocker locker( &mutex );
     // Clear the requests just in case
     queuedRequests.clear();
-    finishedRequests.clear();
 
     searchErrorString.clear();
     searchResultsUncertain = false;
@@ -126,6 +125,7 @@ void WordFinder::startSearch()
       continue;
     }
 
+    latch_counter.reset( new std::latch( allWordWritings.size() ) );
     for ( const auto & allWordWriting : allWordWritings ) {
       try {
         sptr< Dictionary::WordSearchRequest > sr = ( searchType == PrefixMatch || searchType == ExpressionMatch ) ?
@@ -149,8 +149,6 @@ void WordFinder::startSearch()
       }
     }
   }
-
-  // Handle any requests finished already
 }
 
 void WordFinder::cancel()
@@ -166,7 +164,7 @@ void WordFinder::clear()
   QMutexLocker locker( &mutex );
 
   queuedRequests.clear();
-  finishedRequests.clear();
+  latch_counter.reset();
 }
 
 void WordFinder::requestFinished( const sptr< Dictionary::WordSearchRequest > & req )
@@ -188,8 +186,7 @@ void WordFinder::requestFinished( const sptr< Dictionary::WordSearchRequest > & 
       if ( req->matchesCount() > 0u ) {
         QMutexLocker locker( &mutex );
 
-        // This list is handled by updateResults()
-        finishedRequests.push_back( req );
+        latch_counter->count_down();
       }
     }
   }
@@ -197,11 +194,9 @@ void WordFinder::requestFinished( const sptr< Dictionary::WordSearchRequest > & 
   if ( !searchInProgress.load() ) {
     return;
   }
-
-  if ( finishedRequests.size()==queuedRequests.size() ) {
-    // Search is finished.
+  if ( latch_counter->try_wait() ) {
     updateResults();
-  }
+  };
 }
 
 namespace {
@@ -253,7 +248,7 @@ void WordFinder::updateResults()
   {
     QMutexLocker locker( &mutex );
 
-    for ( auto i = finishedRequests.begin(); i != finishedRequests.end(); i++ ) {
+    for ( auto i = queuedRequests.begin(); i != queuedRequests.end(); i++ ) {
       for ( size_t count = ( *i )->matchesCount(), x = 0; x < count; ++x ) {
         std::u32string match      = ( **i )[ x ].word;
         int weight                = ( **i )[ x ].weight;
@@ -304,7 +299,6 @@ void WordFinder::updateResults()
         }
       }
     }
-    finishedRequests.clear();
   }
 
   size_t maxSearchResults = 500;
