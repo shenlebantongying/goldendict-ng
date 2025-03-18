@@ -7,7 +7,6 @@
 #include <map>
 #include <atomic>
 #include <QObject>
-#include <QTimer>
 #include <QMutex>
 #include <QWaitCondition>
 #include <QRunnable>
@@ -33,7 +32,6 @@ private:
   std::atomic_bool searchInProgress;
   QMutex mutex;
 
-  QTimer updateResultsTimer;
 
   // Saved search params
   QString inputWord;
@@ -140,9 +138,6 @@ signals:
   void finished();
 
 private slots:
-
-  /// Called each time one of the requests gets finished
-  void requestFinished();
 
   /// Called by updateResultsTimer to update searchResults and signal updated()
   void updateResults();
